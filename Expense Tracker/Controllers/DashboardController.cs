@@ -9,7 +9,7 @@ namespace Expense_Tracker.Controllers
     {
 
         private readonly ApplicationDbContext _context;
-
+        private readonly CultureInfo _us = new("en-US");
         public DashboardController(ApplicationDbContext context)
         {
             _context = context;
@@ -18,41 +18,40 @@ namespace Expense_Tracker.Controllers
         public async Task<ActionResult> Index()
         {
             //Last 7 Days
-            DateTime StartDate = DateTime.Today.AddDays(-6);
-            DateTime EndDate = DateTime.Today;
+            var startDate = DateTime.Today.AddDays(-6);
+            var endDate = DateTime.Today;
 
-            List<Transaction> SelectedTransactions = await _context.Transactions
+            var selectedTransactions = await _context.Transactions
                 .Include(x => x.Category)
-                .Where(y => y.Date >= StartDate && y.Date <= EndDate)
+                .Where(y => y.Date >= startDate && y.Date <= endDate)
                 .ToListAsync();
 
             //Total Income
-            int TotalIncome = SelectedTransactions
+            var totalIncome = selectedTransactions
                 .Where(i => i.Category.Type == "Income")
                 .Sum(j => j.Amount);
-            ViewBag.TotalIncome = TotalIncome.ToString("C0");
+            ViewBag.TotalIncome = totalIncome.ToString("c", _us);
 
             //Total Expense
-            int TotalExpense = SelectedTransactions
+            var totalExpense = selectedTransactions
                 .Where(i => i.Category.Type == "Expense")
                 .Sum(j => j.Amount);
-            ViewBag.TotalExpense = TotalExpense.ToString("C0");
+            ViewBag.TotalExpense = totalExpense.ToString("c", _us);
 
             //Balance
-            int Balance = TotalIncome - TotalExpense;
-            CultureInfo culture = CultureInfo.CreateSpecificCulture("en-US");
-            culture.NumberFormat.CurrencyNegativePattern = 1;
-            ViewBag.Balance = String.Format(culture, "{0:C0}", Balance);
+            var balance = totalIncome - totalExpense;
+            _us.NumberFormat.CurrencyNegativePattern = 1;
+            ViewBag.Balance = balance.ToString("c", _us);
 
             //Doughnut Chart - Expense By Category
-            ViewBag.DoughnutChartData = SelectedTransactions
+            ViewBag.DoughnutChartData = selectedTransactions
                 .Where(i => i.Category.Type == "Expense")
                 .GroupBy(j => j.Category.CategoryId)
                 .Select(k => new
                 {
                     categoryTitleWithIcon = k.First().Category.Icon + " " + k.First().Category.Title,
                     amount = k.Sum(j => j.Amount),
-                    formattedAmount = k.Sum(j => j.Amount).ToString("C0"),
+                    formattedAmount = k.Sum(j => j.Amount).ToString("c", _us),
                 })
                 .OrderByDescending(l => l.amount)
                 .ToList();
@@ -60,42 +59,42 @@ namespace Expense_Tracker.Controllers
             //Spline Chart - Income vs Expense
 
             //Income
-            List<SplineChartData> IncomeSummary = SelectedTransactions
+            var incomeSummary = selectedTransactions
                 .Where(i => i.Category.Type == "Income")
                 .GroupBy(j => j.Date)
                 .Select(k => new SplineChartData()
                 {
-                    day = k.First().Date.ToString("dd-MMM"),
-                    income = k.Sum(l => l.Amount)
+                    Day = k.First().Date.ToString("dd-MMM"),
+                    Income = k.Sum(l => l.Amount)
                 })
                 .ToList();
 
             //Expense
-            List<SplineChartData> ExpenseSummary = SelectedTransactions
+            var expenseSummary = selectedTransactions
                 .Where(i => i.Category.Type == "Expense")
                 .GroupBy(j => j.Date)
                 .Select(k => new SplineChartData()
                 {
-                    day = k.First().Date.ToString("dd-MMM"),
-                    expense = k.Sum(l => l.Amount)
+                    Day = k.First().Date.ToString("dd-MMM"),
+                    Expense = k.Sum(l => l.Amount)
                 })
                 .ToList();
 
             //Combine Income & Expense
-            string[] Last7Days = Enumerable.Range(0, 7)
-                .Select(i => StartDate.AddDays(i).ToString("dd-MMM"))
+            var last7Days = Enumerable.Range(0, 7)
+                .Select(i => startDate.AddDays(i).ToString("dd-MMM"))
                 .ToArray();
 
-            ViewBag.SplineChartData = from day in Last7Days
-                                      join income in IncomeSummary on day equals income.day into dayIncomeJoined
+            ViewBag.SplineChartData = from day in last7Days
+                                      join income in incomeSummary on day equals income.Day into dayIncomeJoined
                                       from income in dayIncomeJoined.DefaultIfEmpty()
-                                      join expense in ExpenseSummary on day equals expense.day into expenseJoined
+                                      join expense in expenseSummary on day equals expense.Day into expenseJoined
                                       from expense in expenseJoined.DefaultIfEmpty()
                                       select new
                                       {
                                           day = day,
-                                          income = income == null ? 0 : income.income,
-                                          expense = expense == null ? 0 : expense.expense,
+                                          income = income?.Income ?? 0,
+                                          expense = expense?.Expense ?? 0,
                                       };
             //Recent Transactions
             ViewBag.RecentTransactions = await _context.Transactions
@@ -111,9 +110,9 @@ namespace Expense_Tracker.Controllers
 
     public class SplineChartData
     {
-        public string day;
-        public int income;
-        public int expense;
+        public string Day;
+        public decimal Income;
+        public decimal Expense;
 
     }
 }

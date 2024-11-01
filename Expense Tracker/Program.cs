@@ -1,17 +1,23 @@
+using System.Configuration;
 using Expense_Tracker.Models;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+var syncFusionLicenseKey = builder.Configuration["SyncFusionLicenseKey"];
+var dbConnectionString = builder.Configuration["DbConnectionString"];
+
+if (string.IsNullOrEmpty(syncFusionLicenseKey) || string.IsNullOrEmpty(dbConnectionString))
+    throw new ConfigurationErrorsException("Sync Fusion License Key or Connection String is missing");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 //DI
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-options.UseSqlServer(builder.Configuration.GetConnectionString("DevConnection")));
+options.UseSqlServer(dbConnectionString));
 
 //Register Syncfusion license
-Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Mgo+DSMBMAY9C3t2VVhhQlFac1pJXGFWfVJpTGpQdk5xdV9DaVZUTWY/P1ZhSXxRdkNjWn9edHNRRmZYWEM=");
+Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(syncFusionLicenseKey);
 
 var app = builder.Build();
 

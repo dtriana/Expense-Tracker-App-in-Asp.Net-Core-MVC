@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Expense_Tracker.Models;
 
@@ -78,10 +73,10 @@ namespace Expense_Tracker.Controllers
         [NonAction]
         public void PopulateCategories()
         {
-            var CategoryCollection = _context.Categories.ToList();
-            Category DefaultCategory = new Category() { CategoryId = 0, Title = "Choose a Category" };
-            CategoryCollection.Insert(0, DefaultCategory);
-            ViewBag.Categories = CategoryCollection;
+            var categoryCollection = _context.Categories.ToList().OrderBy(n=>n.Title);
+            var categoriesWithDefaultOption = new Category[] {new Category() {CategoryId = 0, Title = "Choose a Category" }}.ToList();
+            categoriesWithDefaultOption.AddRange(categoryCollection);
+            ViewBag.Categories = categoriesWithDefaultOption;
         }
     }
 }
