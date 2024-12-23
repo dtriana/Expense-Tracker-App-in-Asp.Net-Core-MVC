@@ -1,31 +1,41 @@
 using System.Configuration;
 using Expense_Tracker.Models;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-var syncFusionLicenseKey = builder.Configuration["SyncFusionLicenseKey"];
-var dbConnectionString = builder.Configuration["DbConnectionString"];
 
-if (string.IsNullOrEmpty(syncFusionLicenseKey) || string.IsNullOrEmpty(dbConnectionString))
-    throw new ConfigurationErrorsException("Sync Fusion License Key or Connection String is missing");
+builder.AddServiceDefaults();
+var syncFusionLicenseKey = builder.Configuration["SyncFusionLicenseKey"];
+
+if (string.IsNullOrEmpty(syncFusionLicenseKey))
+    throw new Exception("Sync Fusion License Key is missing");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 //DI
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-options.UseSqlServer(dbConnectionString));
+builder.AddSqlServerDbContext<ApplicationDbContext>("sqldata");
 
 //Register Syncfusion license
 Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(syncFusionLicenseKey);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+app.MapDefaultEndpoints();
+
+if (app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        context.Database.EnsureCreated();
+    }
 }
+else
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseHsts();
+}
+
 app.UseStaticFiles();
 
 app.UseRouting();

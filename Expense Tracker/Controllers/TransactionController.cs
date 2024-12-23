@@ -17,7 +17,7 @@ namespace Expense_Tracker.Controllers
         public async Task<IActionResult> Index()
         {
             var applicationDbContext = _context.Transactions.Include(t => t.Category);
-            return View(await applicationDbContext.ToListAsync());
+            return View(await applicationDbContext.OrderByDescending(d=>d.Date).ToListAsync());
         }
 
         // GET: Transaction/AddOrEdit
@@ -35,7 +35,7 @@ namespace Expense_Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddOrEdit([Bind("TransactionId,CategoryId,Amount,Note,Date")] Transaction transaction)
+        public async Task<IActionResult> AddOrEdit([Bind("TransactionId,CategoryId,Amount,Note,Date,MerchantName")] Transaction transaction)
         {
             if (ModelState.IsValid)
             {
@@ -73,7 +73,7 @@ namespace Expense_Tracker.Controllers
         [NonAction]
         public void PopulateCategories()
         {
-            var categoryCollection = _context.Categories.ToList().OrderBy(n=>n.Title);
+            var categoryCollection = _context.Categories.ToList().OrderBy(t=>t.Type).ThenBy(n=>n.Title);
             var categoriesWithDefaultOption = new Category[] {new Category() {CategoryId = 0, Title = "Choose a Category" }}.ToList();
             categoriesWithDefaultOption.AddRange(categoryCollection);
             ViewBag.Categories = categoriesWithDefaultOption;

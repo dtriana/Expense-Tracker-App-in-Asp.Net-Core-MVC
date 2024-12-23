@@ -17,7 +17,10 @@ namespace Expense_Tracker.Models
         [Precision(18, 2)]
         public decimal Amount { get; set; }
 
-        [Column(TypeName = "nvarchar(75)")]
+        [Column(TypeName = "nvarchar(64)")]
+        public string? MerchantName { get; set; }
+        
+        [Column(TypeName = "nvarchar(256)")]
         public string? Note { get; set; }
 
         public DateTime Date { get; set; } = DateTime.Now;

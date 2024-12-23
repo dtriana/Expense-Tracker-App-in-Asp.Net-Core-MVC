@@ -12,6 +12,8 @@ namespace Expense_Tracker.Models
         [Required(ErrorMessage = "Title is required.")]
         public string Title { get; set; }
 
+        public string Description { get; set; }
+
         [Column(TypeName = "nvarchar(5)")]
         public string Icon { get; set; } = "";
 
@@ -23,7 +25,7 @@ namespace Expense_Tracker.Models
         {
             get
             {
-                return this.Icon + " " + this.Title;
+                return (CategoryId == 0)?Title : $"{Icon} {Type}-{Title}";
             }
         }
     }
